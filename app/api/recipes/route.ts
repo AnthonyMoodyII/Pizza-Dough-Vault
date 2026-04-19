@@ -26,6 +26,7 @@ export async function POST(request: Request) {
         yeast: body.yeast,
         oil: body.oil || null,
         poolish: body.poolish || null,
+        flours: body.flours || [],
       },
     });
     return NextResponse.json(recipe, { status: 201 });

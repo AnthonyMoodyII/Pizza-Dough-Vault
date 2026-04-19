@@ -16,6 +16,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         yeast: body.yeast,
         oil: body.oil || null,
         poolish: body.poolish || null,
+        flours: body.flours || [],
       },
     });
     return NextResponse.json(recipe);
