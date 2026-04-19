@@ -15,6 +15,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         salt: body.salt,
         yeast: body.yeast,
         oil: body.oil || null,
+        diastaticMalt: body.diastaticMalt || null,
         poolish: body.poolish || null,
         flours: body.flours || [],
       },

@@ -16,8 +16,9 @@ model Recipe {
   hydration  Float
   salt       Float
   yeast      Float
-  oil        Float?
-  poolish    Float?
+  oil             Float?
+  diastaticMalt   Float?
+  poolish         Float?
   flours     Json?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt

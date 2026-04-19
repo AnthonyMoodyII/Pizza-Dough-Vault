@@ -12,6 +12,7 @@ type Recipe = {
   salt: number;
   yeast: number;
   oil?: number | null;
+  diastaticMalt?: number | null;
   poolish?: number | null; // This now means poolish weight in grams structurally
   flours?: Flour[];
 };
@@ -28,6 +29,7 @@ export default function Home() {
   const [salt, setSalt] = useState<number | string>(2.5);
   const [yeast, setYeast] = useState<number | string>('');
   const [oil, setOil] = useState<number | string>('');
+  const [diastaticMalt, setDiastaticMalt] = useState<number | string>('');
   
   // Poolish weight in grams (fixed total)
   const [poolishWeight, setPoolishWeight] = useState<number | string>(''); 
@@ -121,11 +123,12 @@ export default function Home() {
   const tSalt = Number(salt) || 0;
   const tYeast = Number(yeast) || 0;
   const tOil = Number(oil) || 0;
+  const tDiastaticMalt = Number(diastaticMalt) || 0;
   const tPoolishWeight = Number(poolishWeight) || 0;
 
-  // Calculation Logic (Yeast and Oil are ABSOLUTE grams removed from scaling base)
+  // Calculation Logic (Yeast, Oil, Malt are ABSOLUTE grams removed from scaling base)
   const totalWeight = tDoughBalls * tBallWeight;
-  const scalableWeight = Math.max(0, totalWeight - tYeast - tOil);
+  const scalableWeight = Math.max(0, totalWeight - tYeast - tOil - tDiastaticMalt);
   const totalPercentage = 100 + tHydration + tSalt;
   
   const totalFlour = scalableWeight / (totalPercentage / 100);
@@ -158,6 +161,7 @@ export default function Home() {
           salt: tSalt,
           yeast: tYeast,
           oil: tOil,
+          diastaticMalt: tDiastaticMalt,
           poolish: tPoolishWeight,
           flours
         }),
@@ -178,6 +182,7 @@ export default function Home() {
     setSalt(r.salt);
     setYeast(r.yeast || '');
     setOil(r.oil || '');
+    setDiastaticMalt(r.diastaticMalt || '');
     setPoolishWeight(r.poolish || '');
     if (r.flours && r.flours.length > 0) {
       setFlours(r.flours);
@@ -266,6 +271,13 @@ export default function Home() {
             </div>
           </div>
           <div className="form-group">
+            <label>Total Diastatic Malt (Fixed)</label>
+            <div className="input-wrapper">
+              <input type="number" step="0.1" value={diastaticMalt} onChange={e => setDiastaticMalt(e.target.value)} />
+              <span>g</span>
+            </div>
+          </div>
+          <div className="form-group">
             <label>Total Poolish Weight (Fixed)</label>
             <div className="input-wrapper">
               <input type="number" step="1" value={poolishWeight} onChange={e => setPoolishWeight(e.target.value)} />
@@ -333,6 +345,12 @@ export default function Home() {
             <div className="ingredient-row">
               <div className="ingredient-name">🫒 Oil</div>
               <div className="ingredient-weight">{totalOil.toFixed(1)} g</div>
+            </div>
+          )}
+          {tDiastaticMalt > 0 && (
+            <div className="ingredient-row">
+              <div className="ingredient-name">🌾 Diastatic Malt</div>
+              <div className="ingredient-weight">{tDiastaticMalt.toFixed(1)} g</div>
             </div>
           )}
 
