@@ -18,22 +18,22 @@
 }
 
 [data-theme='dark'] {
-  --bg-color: #0a0000;
-  --text-color: #f5f5f5;
-  --panel-bg: rgba(22, 4, 4, 0.88);
-  --panel-border: rgba(206, 17, 65, 0.18);
-  --primary: #ce1141;
-  --primary-hover: #e8153f;
-  --accent: #ff3d5a;
-  --pill-track: #1c0508;
+  --bg-color: #0f172a;
+  --text-color: #f8fafc;
+  --panel-bg: rgba(30, 41, 59, 0.7);
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --primary: #ea7345;
+  --primary-hover: #f08a64;
+  --accent: #fbbf24;
+  --pill-track: #1e293b;
   --pill-active-bg: var(--primary);
   --pill-active-text: #ffffff;
-  --shadow: 0 8px 32px 0 rgba(206, 17, 65, 0.22);
-  --input-bg: rgba(12, 0, 0, 0.92);
-  --input-border: #4a1020;
-  --ttp-bg: #120002;
-  --ttp-text: #ff4d6a;
-  --muted: #b08090;
+  --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  --input-bg: rgba(15, 23, 42, 0.9);
+  --input-border: #334155;
+  --ttp-bg: #1f2937;
+  --ttp-text: #6dd3a2;
+  --muted: #94a3b8;
 }
 
 body {
