@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Crust (outer ring) -->
+  <circle cx="50" cy="50" r="49" fill="#c97c2f"/>
+  <!-- Cheese base -->
+  <circle cx="50" cy="50" r="41" fill="#f5c842"/>
+  <!-- Tomato sauce -->
+  <circle cx="50" cy="50" r="34" fill="#d63a2a"/>
+
+  <!-- Slice dividers -->
+  <line x1="50" y1="9" x2="50" y2="91" stroke="#c97c2f" stroke-width="1.5" opacity="0.5"/>
+  <line x1="9" y1="50" x2="91" y2="50" stroke="#c97c2f" stroke-width="1.5" opacity="0.5"/>
+  <line x1="17" y1="17" x2="83" y2="83" stroke="#c97c2f" stroke-width="1.5" opacity="0.5"/>
+  <line x1="83" y1="17" x2="17" y2="83" stroke="#c97c2f" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- Cheese pools (irregular blobs) -->
+  <ellipse cx="50" cy="36" rx="10" ry="7" fill="#f7d96a" opacity="0.9"/>
+  <ellipse cx="64" cy="56" rx="8" ry="6" fill="#f7d96a" opacity="0.9"/>
+  <ellipse cx="36" cy="60" rx="9" ry="6" fill="#f7d96a" opacity="0.9"/>
+
+  <!-- Pepperoni toppings -->
+  <circle cx="50" cy="36" r="5.5" fill="#9b2318"/>
+  <circle cx="50" cy="36" r="5.5" fill="#b52b1e" opacity="0.7"/>
+  <circle cx="64" cy="56" r="5" fill="#9b2318"/>
+  <circle cx="36" cy="60" r="5" fill="#9b2318"/>
+  <circle cx="50" cy="62" r="4.5" fill="#9b2318"/>
+  <circle cx="38" cy="42" r="4" fill="#9b2318"/>
+  <circle cx="62" cy="40" r="4" fill="#9b2318"/>
+
+  <!-- Crust highlight -->
+  <circle cx="50" cy="50" r="49" fill="none" stroke="#e8952a" stroke-width="3" opacity="0.5"/>
+</svg>

@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Pizza Dough Vault',
-  description: 'Premium calculator and recipe vault for pizza dough.',
+  title: 'MoodyCrust',
+  description: "Web-portal guide to pizza perfection — baker's math calculator, fermentation scheduler, and recipe vault.",
 };
 
 export default function RootLayout({
