@@ -1,4 +1,5 @@
 'use client';
+import { cToF } from '@/lib/units';
 
 export type Bake = {
   id: string;
@@ -51,7 +52,7 @@ export default function BakeHistory({ bakes, onDelete }: Props) {
             <p className="bake-oven">
               {[
                 b.ovenType,
-                b.ovenTempC ? `${b.ovenTempC} °C` : null,
+                b.ovenTempC ? `${cToF(b.ovenTempC)} °F` : null,
                 b.bakeTimeSec ? `${Math.round(b.bakeTimeSec / 60)} min` : null,
               ].filter(Boolean).join(' · ')}
             </p>

@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { fToC } from '@/lib/units';
 
 export type BakeFormData = {
   bakedAt: string;
@@ -46,7 +47,7 @@ export default function BakeLogForm({ recipeId, ingredients, schedule, onSaved, 
         tastingNotes: tastingNotes || undefined,
         whatChanged: whatChanged || undefined,
         ovenType: ovenType || undefined,
-        ovenTempC: ovenTempC ? Number(ovenTempC) : undefined,
+        ovenTempC: ovenTempC ? fToC(Number(ovenTempC)) : undefined,
         bakeTimeSec: bakeTimeSec ? Math.round(Number(bakeTimeSec) * 60) : undefined,
       };
       const res = await fetch(`/api/recipes/${recipeId}/bakes`, {
@@ -107,11 +108,11 @@ export default function BakeLogForm({ recipeId, ingredients, schedule, onSaved, 
           </select>
         </div>
         <div className="field">
-          <label className="field-label">Oven temp (°C)</label>
+          <label className="field-label">Oven temp (°F)</label>
           <input
             type="number"
             className="text-input"
-            placeholder="e.g. 480"
+            placeholder="e.g. 900"
             value={ovenTempC}
             onChange={(e) => setOvenTempC(e.target.value)}
           />

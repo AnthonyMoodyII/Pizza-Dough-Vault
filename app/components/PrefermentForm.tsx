@@ -1,5 +1,6 @@
 'use client';
 import { PrefermentInput, PrefermentType } from '@/lib/dough';
+import { cToF, fToC } from '@/lib/units';
 
 type Props = {
   value: PrefermentInput;
@@ -67,15 +68,15 @@ export default function PrefermentForm({ value, onChange, autoYeastPercent }: Pr
               />
             </div>
             <div className="field">
-              <label className="field-label">Preferment temperature (°C)</label>
+              <label className="field-label">Preferment temperature (°F)</label>
               <input
                 className="text-input"
                 type="number"
-                min={2}
-                max={35}
-                step={0.5}
-                value={value.temperatureC}
-                onChange={(e) => set('temperatureC', Number(e.target.value))}
+                min={35}
+                max={95}
+                step={1}
+                value={cToF(value.temperatureC)}
+                onChange={(e) => set('temperatureC', fToC(Number(e.target.value)))}
               />
             </div>
             <div className="field">

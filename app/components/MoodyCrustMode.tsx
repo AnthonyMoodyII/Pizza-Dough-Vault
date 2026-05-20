@@ -1,6 +1,7 @@
 'use client';
 import { AdditionalIngredient, FlourPart, PrefermentInput } from '@/lib/dough';
 import { YeastType } from '@/lib/yeast';
+import { cToF, fToC } from '@/lib/units';
 import FlourPicker from './FlourPicker';
 import PrefermentForm from './PrefermentForm';
 import AdditionalIngredientsList from './AdditionalIngredients';
@@ -151,11 +152,11 @@ export default function MoodyCrustMode({
         </div>
         <div className="grid-2" style={{ marginTop: '0.75rem' }}>
           <div className="field">
-            <label className="field-label">Bulk temperature (°C)</label>
+            <label className="field-label">Bulk temperature (°F)</label>
             <input
-              className="text-input" type="number" min={2} max={32} step={0.5}
-              value={state.fermentationTempC}
-              onChange={(e) => set('fermentationTempC', Number(e.target.value))}
+              className="text-input" type="number" min={35} max={90} step={1}
+              value={cToF(state.fermentationTempC)}
+              onChange={(e) => set('fermentationTempC', fToC(Number(e.target.value)))}
             />
           </div>
         </div>

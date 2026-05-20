@@ -22,6 +22,7 @@ import {
 import { calculate } from '@/lib/dough';
 import { convertYeast, estimateIdyPercent } from '@/lib/yeast';
 import { buildSchedule } from '@/lib/schedule';
+import { cToF } from '@/lib/units';
 
 function clamp(v: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, v));
@@ -394,11 +395,11 @@ export default function Home() {
           />
           <p className="muted small" style={{ marginTop: '1rem' }}>
             Yeast estimate: {dough.effective.yeastPercent.toFixed(3)} % {effective.yeastType.toUpperCase()} at{' '}
-            {effective.fermentationTempC} °C for {fermentationHours} h
+            {cToF(effective.fermentationTempC)} °F for {fermentationHours} h
             {dough.preferment && (
               <>
                 {' · '}preferment yeast {dough.effective.prefermentYeastPercent.toFixed(3)} % at{' '}
-                {effective.preferment.temperatureC} °C for {effective.preferment.hours} h
+                {cToF(effective.preferment.temperatureC)} °F for {effective.preferment.hours} h
               </>
             )}
           </p>
