@@ -30,7 +30,6 @@ export type Schedule = {
 };
 
 const MIN = 60 * 1000;
-const HOUR = 60 * MIN;
 
 /**
  * Build a step-by-step plan. Total hours = end-to-end pizza time
