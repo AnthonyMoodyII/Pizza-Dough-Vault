@@ -5,6 +5,11 @@ import ModePills, { Mode } from './components/ModePills';
 import TotalTimePanel from './components/TotalTimePanel';
 import EditionCard from './components/EditionCard';
 import BakeItEasy from './components/BakeItEasy';
+import MoodyCrustMode, {
+  CrustModeState,
+  defaultCrustModeStateFor,
+} from './components/MoodyCrustMode';
+import ResultsTable from './components/ResultsTable';
 import {
   STYLES,
   StyleId,
@@ -13,14 +18,21 @@ import {
   defaultEditionFor,
 } from '@/lib/styles';
 import { calculate } from '@/lib/dough';
+import { convertYeast, estimateIdyPercent } from '@/lib/yeast';
 import { buildSchedule } from '@/lib/schedule';
 
 function clamp(v: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, v));
 }
-
-function snapToEdition(initialFermHours: number, ed: ReturnType<typeof findEdition>) {
-  return clamp(initialFermHours, ed.fermentation.min, ed.fermentation.max);
+function snapFerm(h: number, ed: ReturnType<typeof findEdition>) {
+  return clamp(h, ed.fermentation.min, ed.fermentation.max);
+}
+function pad2(n: number) { return n < 10 ? `0${n}` : `${n}`; }
+function localDate(d: Date) {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+function localTime(d: Date) {
+  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 }
 
 export default function Home() {
@@ -36,7 +48,6 @@ export default function Home() {
   const [ballWeight, setBallWeight] = useState(edition.ballWeightDefault);
   const [fermentationHours, setFermentationHours] = useState(edition.fermentation.default);
 
-  // Default pizza time: today at 18:00 if it's still in the future, otherwise tomorrow 18:00.
   const [pizzaTime, setPizzaTime] = useState<Date>(() => {
     const d = new Date();
     d.setHours(18, 0, 0, 0);
@@ -44,59 +55,142 @@ export default function Home() {
     return d;
   });
 
+  // CrustMode-specific state initialised from the current edition.
+  const [crust, setCrust] = useState<CrustModeState>(() =>
+    defaultCrustModeStateFor(
+      edition.hydrationDefault,
+      edition.saltDefault,
+      edition.oilDefault,
+      edition.sugarDefault,
+      edition.coldFermentDefault,
+    ),
+  );
+
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
-  // When style changes, default to its first edition.
   const handleStyleChange = (next: StyleId) => {
     setStyleId(next);
     const ed = defaultEditionFor(next);
     setEditionId(ed.id);
     setBallWeight(ed.ballWeightDefault);
     setFermentationHours(ed.fermentation.default);
+    setCrust(
+      defaultCrustModeStateFor(
+        ed.hydrationDefault,
+        ed.saltDefault,
+        ed.oilDefault,
+        ed.sugarDefault,
+        ed.coldFermentDefault,
+      ),
+    );
   };
 
-  // When edition changes, snap weight + ferm to that edition's range.
   const handleEditionChange = (id: string) => {
     const ed = findEdition(id as EditionId);
     setEditionId(ed.id);
     setBallWeight(clamp(ballWeight, ed.ballWeightRange[0], ed.ballWeightRange[1]));
-    setFermentationHours(snapToEdition(fermentationHours, ed));
+    setFermentationHours(snapFerm(fermentationHours, ed));
+    setCrust((prev) => ({
+      ...prev,
+      hydration: ed.hydrationDefault,
+      saltPercent: ed.saltDefault,
+      oilPercent: ed.oilDefault,
+      sugarPercent: ed.sugarDefault,
+      useColdFerment: ed.coldFermentDefault,
+      fermentationTempC: ed.coldFermentDefault ? 4 : 22,
+    }));
   };
 
-  // Use edition defaults for hydration/salt/oil/sugar in Easy mode (advanced controls live in Phase 3).
+  // Effective parameters: Easy mode reads edition defaults; CrustMode reads the editable state.
+  const effective = useMemo(() => {
+    if (mode === 'easy') {
+      return {
+        hydration: edition.hydrationDefault,
+        saltPercent: edition.saltDefault,
+        oilPercent: edition.oilDefault,
+        sugarPercent: edition.sugarDefault,
+        yeastType: 'idy' as const,
+        yeastPercentOverride: undefined as number | undefined,
+        fermentationTempC: edition.coldFermentDefault ? 4 : 22,
+        useColdFerment: edition.coldFermentDefault,
+        useAutolyse: false,
+        stretchAndFolds: 0,
+        flours: [{ id: 'main', name: 'Main flour', percentage: 100 }],
+        preferment: { type: 'none' as const, flourPercent: 0, hydration: 100, hours: 0, temperatureC: 22 },
+        additional: [],
+      };
+    }
+    return {
+      hydration: crust.hydration,
+      saltPercent: crust.saltPercent,
+      oilPercent: crust.oilPercent,
+      sugarPercent: crust.sugarPercent,
+      yeastType: crust.yeastType,
+      yeastPercentOverride: crust.yeastPercentOverride,
+      fermentationTempC: crust.fermentationTempC,
+      useColdFerment: crust.useColdFerment,
+      useAutolyse: crust.useAutolyse,
+      stretchAndFolds: crust.stretchAndFolds,
+      flours: crust.flours,
+      preferment: crust.preferment,
+      additional: crust.additional,
+    };
+  }, [mode, edition, crust]);
+
+  // Auto-estimated yeast %, shown when user hasn't overridden.
+  const autoYeastPercent = useMemo(
+    () =>
+      convertYeast(
+        estimateIdyPercent(fermentationHours, effective.fermentationTempC),
+        effective.yeastType,
+      ),
+    [fermentationHours, effective.fermentationTempC, effective.yeastType],
+  );
+
+  const autoPrefermentYeastPercent = useMemo(
+    () =>
+      convertYeast(
+        estimateIdyPercent(effective.preferment.hours || 1, effective.preferment.temperatureC),
+        effective.yeastType,
+      ),
+    [effective.preferment.hours, effective.preferment.temperatureC, effective.yeastType],
+  );
+
   const dough = useMemo(
     () =>
       calculate({
         doughBalls,
         ballWeight,
-        hydration: edition.hydrationDefault,
-        saltPercent: edition.saltDefault,
-        oilPercent: edition.oilDefault,
-        sugarPercent: edition.sugarDefault,
-        yeastType: 'idy',
+        hydration: effective.hydration,
+        saltPercent: effective.saltPercent,
+        oilPercent: effective.oilPercent,
+        sugarPercent: effective.sugarPercent,
+        yeastType: effective.yeastType,
+        yeastPercentOverride: effective.yeastPercentOverride,
         fermentationHours,
-        fermentationTempC: edition.coldFermentDefault ? 4 : 22,
-        flours: [{ id: '1', name: 'Main flour', percentage: 100 }],
-        preferment: { type: 'none', flourPercent: 0, hydration: 100, hours: 0, temperatureC: 22 },
-        additional: [],
+        fermentationTempC: effective.fermentationTempC,
+        flours: effective.flours,
+        preferment: effective.preferment,
+        additional: effective.additional,
       }),
-    [doughBalls, ballWeight, edition, fermentationHours],
+    [doughBalls, ballWeight, fermentationHours, effective],
   );
 
-  const schedule = useMemo(
-    () =>
-      buildSchedule({
-        styleId,
-        anchor: { kind: 'end', at: pizzaTime },
-        totalHours: fermentationHours,
-        useColdFerment: edition.coldFermentDefault,
-        useAutolyse: false,
-        stretchAndFolds: 0,
-      }),
-    [styleId, pizzaTime, fermentationHours, edition.coldFermentDefault],
-  );
+  const schedule = useMemo(() => {
+    const anchorKind = mode === 'easy' ? 'end' : crust.anchorKind;
+    return buildSchedule({
+      styleId,
+      anchor: { kind: anchorKind, at: pizzaTime },
+      totalHours: fermentationHours,
+      useColdFerment: effective.useColdFerment,
+      prefermentHours:
+        effective.preferment.type !== 'none' ? effective.preferment.hours : undefined,
+      useAutolyse: effective.useAutolyse,
+      stretchAndFolds: effective.stretchAndFolds,
+    });
+  }, [mode, crust.anchorKind, styleId, pizzaTime, fermentationHours, effective]);
 
   return (
     <>
@@ -132,62 +226,101 @@ export default function Home() {
             onBallWeightChange={setBallWeight}
           />
         ) : (
-          <section className="glass-panel mode-panel">
-            <h2>Moody-CrustMode</h2>
-            <p className="placeholder-note">
-              Full control over preferments, autolyse, stretch &amp; folds, additional ingredients,
-              and a planning-mode anchor toggle lands in Phase 3.
-            </p>
-            <p className="placeholder-note">
-              For now, switch back to <strong>Bake It Easy</strong> to dial in {style.label} {edition.label}.
-            </p>
-          </section>
+          <>
+            <section className="glass-panel mode-panel">
+              <h2>{crust.anchorKind === 'end' ? 'Pizza Time' : 'Start Time'}</h2>
+              <div className="row gap">
+                <input
+                  type="date"
+                  value={localDate(pizzaTime)}
+                  onChange={(e) => {
+                    if (!e.target.value) return;
+                    const [y, m, d] = e.target.value.split('-').map(Number);
+                    const next = new Date(pizzaTime);
+                    next.setFullYear(y, m - 1, d);
+                    setPizzaTime(next);
+                  }}
+                  className="picker"
+                />
+                <input
+                  type="time"
+                  value={localTime(pizzaTime)}
+                  onChange={(e) => {
+                    if (!e.target.value) return;
+                    const [h, m] = e.target.value.split(':').map(Number);
+                    const next = new Date(pizzaTime);
+                    next.setHours(h, m, 0, 0);
+                    setPizzaTime(next);
+                  }}
+                  className="picker"
+                />
+              </div>
+              <h3 className="sub-label">Number of Pizzas</h3>
+              <input
+                className="big-number"
+                type="number"
+                min={1}
+                max={50}
+                value={doughBalls}
+                onChange={(e) => setDoughBalls(Math.max(1, Number(e.target.value) || 1))}
+              />
+              <h3 className="sub-label">Weight Per Pizza (g)</h3>
+              <input
+                className="big-number"
+                type="number"
+                min={50}
+                max={1500}
+                step={5}
+                value={ballWeight}
+                onChange={(e) => setBallWeight(Math.max(50, Number(e.target.value) || 50))}
+              />
+              <h3 className="sub-label">Fermentation Duration (h)</h3>
+              <input
+                className="big-number"
+                type="number"
+                min={1}
+                max={120}
+                step={0.5}
+                value={fermentationHours}
+                onChange={(e) => setFermentationHours(Math.max(1, Number(e.target.value) || 1))}
+              />
+            </section>
+
+            <MoodyCrustMode
+              state={crust}
+              onChange={setCrust}
+              autoYeastPercent={autoYeastPercent}
+              autoPrefermentYeastPercent={autoPrefermentYeastPercent}
+            />
+          </>
         )}
 
         <section className="glass-panel mode-panel">
           <h2>Calculated Formula</h2>
           <p className="muted">
-            Target dough yield: {dough.targetTotal.toFixed(0)} g
-            ({doughBalls} × {ballWeight} g)
+            Target dough yield: {dough.targetTotal.toFixed(0)} g ({doughBalls} × {ballWeight} g)
           </p>
-          <div className="ingredient-row">
-            <div className="ingredient-name">🌾 Flour</div>
-            <div className="ingredient-weight">{dough.total.flour.toFixed(0)} g</div>
-          </div>
-          <div className="ingredient-row">
-            <div className="ingredient-name">💧 Water</div>
-            <div className="ingredient-weight">{dough.total.water.toFixed(0)} g</div>
-          </div>
-          <div className="ingredient-row">
-            <div className="ingredient-name">🧂 Salt</div>
-            <div className="ingredient-weight">{dough.total.salt.toFixed(1)} g</div>
-          </div>
-          {dough.total.oil > 0 && (
-            <div className="ingredient-row">
-              <div className="ingredient-name">🫒 Oil</div>
-              <div className="ingredient-weight">{dough.total.oil.toFixed(1)} g</div>
-            </div>
-          )}
-          {dough.total.sugar > 0 && (
-            <div className="ingredient-row">
-              <div className="ingredient-name">🍬 Sugar</div>
-              <div className="ingredient-weight">{dough.total.sugar.toFixed(1)} g</div>
-            </div>
-          )}
-          <div className="ingredient-row">
-            <div className="ingredient-name">🦠 Yeast (IDY)</div>
-            <div className="ingredient-weight">{dough.total.yeast.toFixed(2)} g</div>
-          </div>
-          <p className="muted small">
-            Auto-yeast: {dough.effective.yeastPercent.toFixed(3)}% IDY at{' '}
-            {edition.coldFermentDefault ? '4°C cold' : '22°C room'} for {fermentationHours}h.
+          <ResultsTable
+            dough={dough}
+            doughBalls={doughBalls}
+            ballWeight={ballWeight}
+          />
+          <p className="muted small" style={{ marginTop: '1rem' }}>
+            Yeast estimate: {dough.effective.yeastPercent.toFixed(3)} % {effective.yeastType.toUpperCase()} at{' '}
+            {effective.fermentationTempC} °C for {fermentationHours} h
+            {dough.preferment && (
+              <>
+                {' · '}preferment yeast {dough.effective.prefermentYeastPercent.toFixed(3)} % at{' '}
+                {effective.preferment.temperatureC} °C for {effective.preferment.hours} h
+              </>
+            )}
           </p>
         </section>
 
         <section className="glass-panel mode-panel">
           <h2>Vault</h2>
           <p className="placeholder-note">
-            Saved recipes (with bake history, tasting notes, and photos) return in <strong>Phase 4</strong>.
+            Saved recipes (with bake history, tasting notes, and photos) arrive in <strong>Phase 4</strong>.
           </p>
         </section>
       </main>
