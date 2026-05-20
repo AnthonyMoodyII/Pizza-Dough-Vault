@@ -15,7 +15,9 @@ COPY . .
 RUN npx prisma generate
 RUN npm run build
 
+# Make entrypoint executable
+RUN chmod +x docker-entrypoint.sh
+
 EXPOSE 3000
 
-# Start Next.js
-CMD ["npm", "start"]
+ENTRYPOINT ["sh", "docker-entrypoint.sh"]
