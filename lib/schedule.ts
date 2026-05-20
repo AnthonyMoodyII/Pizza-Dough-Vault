@@ -165,15 +165,22 @@ export function buildSchedule(input: ScheduleInput): Schedule {
     return step;
   });
 
-  const bulkEnd = resolved.find((s) => s.id === 'cold' || s.id === 'ball' || s.id === 'ball-pre-cold');
-  const coldEnd = resolved.find((s) => s.id === 'final-proof');
+  // Only surface bulk/cold milestones for cold-ferment schedules. Room-temp
+  // schedules go straight from bulk -> ball -> final proof, so an intermediate
+  // "bulk end" timestamp is just noise.
+  const bulkEnd = input.useColdFerment
+    ? resolved.find((s) => s.id === 'ball-pre-cold')
+    : undefined;
+  const coldEnd = input.useColdFerment
+    ? resolved.find((s) => s.id === 'final-proof')
+    : undefined;
 
   return {
     steps: resolved,
     startsAt,
     endsAt,
     bulkEndsAt: bulkEnd?.startsAt,
-    coldEndsAt: input.useColdFerment ? coldEnd?.startsAt : undefined,
+    coldEndsAt: coldEnd?.startsAt,
   };
 }
 
