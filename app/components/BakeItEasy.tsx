@@ -1,5 +1,5 @@
 'use client';
-import { Edition } from '@/lib/styles';
+import { Edition, estimateDiameterIn } from '@/lib/styles';
 
 type Props = {
   edition: Edition;
@@ -114,6 +114,10 @@ export default function BakeItEasy({
         className="weight-slider"
         aria-label="Weight per pizza"
       />
+      <p className="muted small diameter-est">
+        ≈ {estimateDiameterIn(ballWeight, edition).toFixed(1)} in pizza
+        ({edition.diameterIn[0]}–{edition.diameterIn[1]} in range for this edition)
+      </p>
     </section>
   );
 }

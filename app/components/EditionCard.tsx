@@ -27,7 +27,7 @@ export default function EditionCard({ style, edition, onChange }: Props) {
         <div className="edition-title">{edition.label}</div>
       )}
       <div className="edition-diameter">
-        Ø {edition.diameterCm[0]}–{edition.diameterCm[1]} cm
+        Ø {edition.diameterIn[0]}–{edition.diameterIn[1]} in
       </div>
       <div className="edition-desc">{edition.description}</div>
       <div className="edition-rec">Recommendation: {edition.recommendation}</div>

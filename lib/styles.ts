@@ -13,7 +13,7 @@ export type Edition = {
   id: EditionId;
   styleId: StyleId;
   label: string;
-  diameterCm: [number, number];
+  diameterIn: [number, number];
   ballWeightRange: [number, number];
   ballWeightDefault: number;
   hydrationRange: [number, number];
@@ -44,7 +44,7 @@ export const STYLES: Style[] = [
         id: 'neapolitan-home',
         styleId: 'neapolitan',
         label: 'Home Edition',
-        diameterCm: [28, 30],
+        diameterIn: [11, 12],
         ballWeightRange: [180, 280],
         ballWeightDefault: 250,
         hydrationRange: [60, 70],
@@ -61,7 +61,7 @@ export const STYLES: Style[] = [
         id: 'neapolitan-classic',
         styleId: 'neapolitan',
         label: 'Classic AVPN',
-        diameterCm: [28, 32],
+        diameterIn: [11, 13],
         ballWeightRange: [200, 280],
         ballWeightDefault: 250,
         hydrationRange: [58, 65],
@@ -84,9 +84,9 @@ export const STYLES: Style[] = [
         id: 'newyork-classic',
         styleId: 'newyork',
         label: 'Classic Slice',
-        diameterCm: [40, 46],
-        ballWeightRange: [400, 600],
-        ballWeightDefault: 500,
+        diameterIn: [12, 14],
+        ballWeightRange: [250, 350],
+        ballWeightDefault: 300,
         hydrationRange: [60, 65],
         hydrationDefault: 62,
         saltDefault: 2.0,
@@ -101,9 +101,9 @@ export const STYLES: Style[] = [
         id: 'newyork-thin',
         styleId: 'newyork',
         label: 'Thin & Crispy',
-        diameterCm: [40, 50],
-        ballWeightRange: [350, 500],
-        ballWeightDefault: 420,
+        diameterIn: [12, 14],
+        ballWeightRange: [200, 300],
+        ballWeightDefault: 250,
         hydrationRange: [55, 60],
         hydrationDefault: 58,
         saltDefault: 2.0,
@@ -124,9 +124,9 @@ export const STYLES: Style[] = [
         id: 'roma-teglia',
         styleId: 'roma',
         label: 'Teglia (Pan)',
-        diameterCm: [30, 40],
-        ballWeightRange: [500, 900],
-        ballWeightDefault: 700,
+        diameterIn: [12, 14],
+        ballWeightRange: [220, 320],
+        ballWeightDefault: 260,
         hydrationRange: [75, 85],
         hydrationDefault: 80,
         saltDefault: 2.5,
@@ -141,9 +141,9 @@ export const STYLES: Style[] = [
         id: 'roma-tonda',
         styleId: 'roma',
         label: 'Tonda (Thin Round)',
-        diameterCm: [30, 34],
-        ballWeightRange: [180, 230],
-        ballWeightDefault: 200,
+        diameterIn: [12, 14],
+        ballWeightRange: [210, 300],
+        ballWeightDefault: 250,
         hydrationRange: [55, 62],
         hydrationDefault: 58,
         saltDefault: 2.5,
@@ -164,7 +164,7 @@ export const STYLES: Style[] = [
         id: 'newhaven-classic',
         styleId: 'newhaven',
         label: 'Apizza (Classic)',
-        diameterCm: [30, 35],
+        diameterIn: [12, 14],
         ballWeightRange: [320, 450],
         ballWeightDefault: 380,
         hydrationRange: [62, 70],
@@ -187,7 +187,7 @@ export const STYLES: Style[] = [
         id: 'chicagothin-tavern',
         styleId: 'chicagothin',
         label: 'Tavern (Party Cut)',
-        diameterCm: [30, 35],
+        diameterIn: [12, 14],
         ballWeightRange: [280, 420],
         ballWeightDefault: 350,
         hydrationRange: [45, 52],
@@ -216,4 +216,17 @@ export function defaultEditionFor(styleId: StyleId): Edition {
   const s = STYLES.find((x) => x.id === styleId);
   if (!s) throw new Error(`Unknown style: ${styleId}`);
   return s.editions[0];
+}
+
+/**
+ * Approximate finished pizza diameter (inches) for a given ball weight,
+ * interpolated linearly across the edition's published weight and diameter
+ * ranges. Rough but stable, and matches how stylists publish their bands.
+ */
+export function estimateDiameterIn(ballWeight: number, edition: Edition): number {
+  const [wMin, wMax] = edition.ballWeightRange;
+  const [dMin, dMax] = edition.diameterIn;
+  if (wMax === wMin) return dMin;
+  const t = Math.max(0, Math.min(1, (ballWeight - wMin) / (wMax - wMin)));
+  return dMin + t * (dMax - dMin);
 }

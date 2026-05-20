@@ -10,12 +10,14 @@ import MoodyCrustMode, {
   defaultCrustModeStateFor,
 } from './components/MoodyCrustMode';
 import ResultsTable from './components/ResultsTable';
+import RecipeVault from './components/RecipeVault';
 import {
   STYLES,
   StyleId,
   EditionId,
   findEdition,
   defaultEditionFor,
+  estimateDiameterIn,
 } from '@/lib/styles';
 import { calculate } from '@/lib/dough';
 import { convertYeast, estimateIdyPercent } from '@/lib/yeast';
@@ -55,7 +57,6 @@ export default function Home() {
     return d;
   });
 
-  // CrustMode-specific state initialised from the current edition.
   const [crust, setCrust] = useState<CrustModeState>(() =>
     defaultCrustModeStateFor(
       edition.hydrationDefault,
@@ -65,6 +66,11 @@ export default function Home() {
       edition.coldFermentDefault,
     ),
   );
+
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [saveRecipeName, setSaveRecipeName] = useState('');
+  const [showSaveInput, setShowSaveInput] = useState(false);
+  const [vaultRefreshKey, setVaultRefreshKey] = useState(0);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -103,7 +109,6 @@ export default function Home() {
     }));
   };
 
-  // Effective parameters: Easy mode reads edition defaults; CrustMode reads the editable state.
   const effective = useMemo(() => {
     if (mode === 'easy') {
       return {
@@ -139,7 +144,6 @@ export default function Home() {
     };
   }, [mode, edition, crust]);
 
-  // Auto-estimated yeast %, shown when user hasn't overridden.
   const autoYeastPercent = useMemo(
     () =>
       convertYeast(
@@ -192,6 +196,55 @@ export default function Home() {
     });
   }, [mode, crust.anchorKind, styleId, pizzaTime, fermentationHours, effective]);
 
+  const saveRecipe = async () => {
+    if (!saveRecipeName.trim()) return;
+    setSaveStatus('saving');
+    try {
+      const anchorKind = mode === 'easy' ? 'end' : crust.anchorKind;
+      const payload = {
+        name: saveRecipeName.trim(),
+        styleId,
+        editionId,
+        mode: mode === 'easy' ? 'easy' : 'moodycrustmode',
+        doughBalls,
+        ballWeight,
+        hydration: effective.hydration,
+        saltPercent: effective.saltPercent,
+        oilPercent: effective.oilPercent,
+        sugarPercent: effective.sugarPercent ?? undefined,
+        yeastType: effective.yeastType,
+        yeastPercent: effective.yeastPercentOverride ?? undefined,
+        fermentationHours,
+        fermentationTempC: effective.fermentationTempC,
+        useColdFerment: effective.useColdFerment,
+        useAutolyse: effective.useAutolyse,
+        stretchAndFolds: effective.stretchAndFolds,
+        preferment: effective.preferment.type !== 'none' ? effective.preferment : undefined,
+        flours: effective.flours,
+        additional: effective.additional.length ? effective.additional : undefined,
+        anchor: { kind: anchorKind, at: pizzaTime.toISOString() },
+        tags: [],
+      };
+      const res = await fetch('/api/recipes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setSaveStatus('saved');
+      setSaveRecipeName('');
+      setShowSaveInput(false);
+      setVaultRefreshKey((k) => k + 1);
+      setTimeout(() => setSaveStatus('idle'), 2500);
+    } catch {
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    }
+  };
+
+  const ingredientsForVault = useMemo<Record<string, unknown>>(() => JSON.parse(JSON.stringify(dough)), [dough]);
+  const scheduleForVault = useMemo<Record<string, unknown>>(() => JSON.parse(JSON.stringify(schedule)), [schedule]);
+
   return (
     <>
       <header className="mc-header">
@@ -202,7 +255,7 @@ export default function Home() {
           {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
         </button>
         <h1>MoodyCrust</h1>
-        <p className="tagline">Your pocket-sized weapon for pizza perfection</p>
+        <p className="tagline">Web-portal guide to pizza perfection</p>
       </header>
 
       <main className="mc-shell">
@@ -274,6 +327,10 @@ export default function Home() {
                 value={ballWeight}
                 onChange={(e) => setBallWeight(Math.max(50, Number(e.target.value) || 50))}
               />
+              <p className="muted small diameter-est">
+                ≈ {estimateDiameterIn(ballWeight, edition).toFixed(1)} in pizza
+                ({edition.diameterIn[0]}–{edition.diameterIn[1]} in range for this edition)
+              </p>
               <h3 className="sub-label">Fermentation Duration (h)</h3>
               <input
                 className="big-number"
@@ -296,7 +353,37 @@ export default function Home() {
         )}
 
         <section className="glass-panel mode-panel">
-          <h2>Calculated Formula</h2>
+          <div className="formula-header">
+            <h2>Calculated Formula</h2>
+            {!showSaveInput ? (
+              <button
+                className="btn-primary btn-sm"
+                onClick={() => setShowSaveInput(true)}
+              >
+                Save Recipe
+              </button>
+            ) : (
+              <div className="save-recipe-row">
+                <input
+                  type="text"
+                  className="text-input save-name-input"
+                  placeholder="Recipe name…"
+                  value={saveRecipeName}
+                  onChange={(e) => setSaveRecipeName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') saveRecipe(); if (e.key === 'Escape') { setShowSaveInput(false); setSaveRecipeName(''); } }}
+                  autoFocus
+                />
+                <button className="btn-primary btn-sm" onClick={saveRecipe} disabled={saveStatus === 'saving' || !saveRecipeName.trim()}>
+                  {saveStatus === 'saving' ? '…' : 'Save'}
+                </button>
+                <button className="btn-ghost btn-sm" onClick={() => { setShowSaveInput(false); setSaveRecipeName(''); }}>
+                  ✕
+                </button>
+              </div>
+            )}
+          </div>
+          {saveStatus === 'saved' && <p className="save-success">Recipe saved!</p>}
+          {saveStatus === 'error' && <p className="save-error">Failed to save. Try again.</p>}
           <p className="muted">
             Target dough yield: {dough.targetTotal.toFixed(0)} g ({doughBalls} × {ballWeight} g)
           </p>
@@ -317,12 +404,11 @@ export default function Home() {
           </p>
         </section>
 
-        <section className="glass-panel mode-panel">
-          <h2>Vault</h2>
-          <p className="placeholder-note">
-            Saved recipes (with bake history, tasting notes, and photos) arrive in <strong>Phase 4</strong>.
-          </p>
-        </section>
+        <RecipeVault
+          currentIngredients={ingredientsForVault}
+          currentSchedule={scheduleForVault}
+          refreshKey={vaultRefreshKey}
+        />
       </main>
     </>
   );

@@ -9,17 +9,49 @@ datasource db {
 }
 
 model Recipe {
-  id         String   @id @default(uuid())
-  name       String
-  doughBalls Int
-  ballWeight Float
-  hydration  Float
-  salt       Float
-  yeast      Float
-  oil             Float?
-  diastaticMalt   Float?
-  poolish         Float?
-  flours     Json?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id                 String   @id @default(uuid())
+  name               String
+  description        String?
+  styleId            String
+  editionId          String
+  mode               String   @default("easy")
+  doughBalls         Int
+  ballWeight         Float
+  hydration          Float
+  saltPercent        Float
+  oilPercent         Float    @default(0)
+  sugarPercent       Float?
+  yeastType          String   @default("idy")
+  yeastPercent       Float?
+  fermentationHours  Float
+  fermentationTempC  Float    @default(22)
+  useColdFerment     Boolean  @default(false)
+  useAutolyse        Boolean  @default(false)
+  stretchAndFolds    Int      @default(0)
+  preferment         Json?
+  flours             Json?
+  additional         Json?
+  anchor             Json?
+  tags               String[]
+  isFavorite         Boolean  @default(false)
+  bakes              Bake[]
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model Bake {
+  id           String   @id @default(uuid())
+  recipeId     String
+  recipe       Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  bakedAt      DateTime
+  ingredients  Json
+  schedule     Json
+  rating       Int?
+  tastingNotes String?
+  whatChanged  String?
+  photoUrls    String[]
+  ovenType     String?
+  ovenTempC    Float?
+  bakeTimeSec  Int?
+  createdAt    DateTime @default(now())
 }

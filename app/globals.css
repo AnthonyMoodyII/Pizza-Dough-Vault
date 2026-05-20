@@ -302,6 +302,7 @@ h3.sub-label {
 .muted { color: var(--muted); font-size: 0.9rem; margin: 0 0 1rem; }
 .small { font-size: 0.8rem; }
 .placeholder-note { color: var(--muted); font-size: 0.95rem; line-height: 1.5; }
+.diameter-est { margin: 6px 0 0; font-style: italic; }
 
 /* ---- Phase 3: Moody-CrustMode ---- */
 .cm-panel { padding-bottom: 24px; }
@@ -460,3 +461,196 @@ h3.sub-label {
   color: var(--primary);
   font-weight: 700;
 }
+
+/* ---- Phase 4: Vault ---- */
+.vault-panel { padding-bottom: 20px; }
+.vault-filters { margin-bottom: 1rem; }
+
+.recipe-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recipe-card {
+  background: var(--input-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.recipe-card:hover { border-color: var(--primary); }
+.recipe-card-selected {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(234, 115, 69, 0.2);
+}
+.recipe-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.recipe-card-name {
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 2px;
+}
+.recipe-card-meta { font-size: 0.85rem; opacity: 0.75; }
+.recipe-card-footer { margin-top: 6px; }
+.recipe-bake-count { font-size: 0.8rem; opacity: 0.65; }
+
+.style-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: white;
+  letter-spacing: 0.3px;
+}
+
+.fav-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 0;
+  line-height: 1;
+}
+.fav-btn-on { color: var(--accent); }
+.fav-btn:hover { color: var(--accent); }
+
+/* Recipe Detail */
+.recipe-detail {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--panel-border);
+}
+.recipe-detail-loading { color: var(--muted); font-size: 0.9rem; padding: 0.5rem 0; }
+.recipe-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 0.5rem;
+}
+.recipe-detail-name { font-weight: 700; font-size: 1.05rem; }
+.recipe-detail-desc { font-size: 0.85rem; opacity: 0.75; margin: 2px 0 0; }
+.recipe-detail-stats { font-size: 0.85rem; opacity: 0.7; margin-top: 4px; }
+.recipe-detail-params { font-size: 0.85rem; opacity: 0.7; margin-bottom: 0.5rem; }
+.recipe-detail-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.recipe-detail-section { margin-top: 1rem; }
+.recipe-detail-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+.recipe-detail-section-header h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 0.5rem; }
+.tag-chip {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--pill-track);
+  color: var(--text-color);
+}
+
+/* Bake History */
+.bake-history { display: flex; flex-direction: column; gap: 10px; }
+.bake-entry {
+  background: var(--input-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+}
+.bake-entry-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.bake-date { font-weight: 600; }
+.bake-stars { color: var(--accent); letter-spacing: 1px; font-size: 0.85rem; }
+.bake-delete {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0 2px;
+}
+.bake-delete:hover { color: var(--primary); }
+.bake-changed { margin: 2px 0; opacity: 0.8; font-style: italic; }
+.bake-notes { margin: 2px 0; opacity: 0.85; }
+.bake-oven { margin: 4px 0 0; font-size: 0.8rem; opacity: 0.6; }
+
+/* Bake Log Form */
+.bake-log-form { display: flex; flex-direction: column; gap: 12px; }
+.bake-log-form h3 { font-size: 1rem; font-weight: 700; margin: 0 0 4px; }
+.bake-form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+.star-row { display: flex; gap: 4px; }
+.star-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.4rem;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 0;
+  line-height: 1;
+}
+.star-btn-on { color: var(--accent); }
+.star-btn:hover { color: var(--accent); }
+
+textarea.text-input { resize: vertical; font-family: inherit; }
+
+/* Buttons */
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--input-border);
+  color: var(--text-color);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.btn-ghost:hover { border-color: var(--primary); color: var(--primary); }
+.btn-ghost:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-sm { padding: 5px 12px; font-size: 0.82rem; }
+
+/* Save Recipe row */
+.formula-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+.formula-header h2 { margin: 0; }
+.save-recipe-row { display: flex; gap: 6px; align-items: center; }
+.save-name-input { flex: 1; padding: 6px 10px; font-size: 0.9rem; }
+.save-success { color: #6dd3a2; font-size: 0.85rem; margin: 0 0 0.5rem; }
+.save-error { color: #f87171; font-size: 0.85rem; margin: 0 0 0.5rem; }
+.form-error { color: #f87171; font-size: 0.85rem; margin: 0; }
