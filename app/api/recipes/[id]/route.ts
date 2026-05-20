@@ -1,41 +1,47 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { RecipeUpdateSchema } from '@/lib/validation';
 
-export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+type Ctx = { params: Promise<{ id: string }> };
+
+export async function GET(_req: Request, { params }: Ctx) {
   try {
-    const resolvedParams = await params;
-    const body = await request.json();
-    const recipe = await prisma.recipe.update({
-      where: { id: resolvedParams.id },
-      data: {
-        name: body.name,
-        doughBalls: body.doughBalls,
-        ballWeight: body.ballWeight,
-        hydration: body.hydration,
-        salt: body.salt,
-        yeast: body.yeast,
-        oil: body.oil || null,
-        diastaticMalt: body.diastaticMalt || null,
-        poolish: body.poolish || null,
-        flours: body.flours || [],
-      },
+    const { id } = await params;
+    const recipe = await prisma.recipe.findUnique({
+      where: { id },
+      include: { bakes: { orderBy: { bakedAt: 'desc' } } },
     });
+    if (!recipe) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     return NextResponse.json(recipe);
   } catch (error) {
-    console.error('Error updating recipe:', error);
+    console.error('GET /api/recipes/[id]', error);
+    return NextResponse.json({ error: 'Failed to fetch recipe' }, { status: 500 });
+  }
+}
+
+export async function PUT(request: Request, { params }: Ctx) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+    const parsed = RecipeUpdateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    }
+    const recipe = await prisma.recipe.update({ where: { id }, data: parsed.data as never });
+    return NextResponse.json(recipe);
+  } catch (error) {
+    console.error('PUT /api/recipes/[id]', error);
     return NextResponse.json({ error: 'Failed to update recipe' }, { status: 500 });
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(_req: Request, { params }: Ctx) {
   try {
-    const resolvedParams = await params;
-    await prisma.recipe.delete({
-      where: { id: resolvedParams.id },
-    });
+    const { id } = await params;
+    await prisma.recipe.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting recipe:', error);
+    console.error('DELETE /api/recipes/[id]', error);
     return NextResponse.json({ error: 'Failed to delete recipe' }, { status: 500 });
   }
 }
