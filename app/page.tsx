@@ -11,6 +11,7 @@ import MoodyCrustMode, {
 } from './components/MoodyCrustMode';
 import ResultsTable from './components/ResultsTable';
 import RecipeVault from './components/RecipeVault';
+import RecipeDetail from './components/RecipeDetail';
 import {
   STYLES,
   StyleId,
@@ -18,15 +19,14 @@ import {
   findEdition,
   defaultEditionFor,
   estimateDiameterIn,
+  diameterForBallWeight,
+  Thickness,
 } from '@/lib/styles';
 import { calculate } from '@/lib/dough';
 import { convertYeast, estimateIdyPercent } from '@/lib/yeast';
 import { buildSchedule } from '@/lib/schedule';
-import { cToF } from '@/lib/units';
+import { cToF, clamp } from '@/lib/units';
 
-function clamp(v: number, lo: number, hi: number) {
-  return Math.max(lo, Math.min(hi, v));
-}
 function snapFerm(h: number, ed: ReturnType<typeof findEdition>) {
   return clamp(h, ed.fermentation.min, ed.fermentation.max);
 }
@@ -49,6 +49,7 @@ export default function Home() {
 
   const [doughBalls, setDoughBalls] = useState(4);
   const [ballWeight, setBallWeight] = useState(edition.ballWeightDefault);
+  const [thickness, setThickness] = useState<Thickness>('regular');
   const [fermentationHours, setFermentationHours] = useState(edition.fermentation.default);
 
   const [pizzaTime, setPizzaTime] = useState<Date>(() => {
@@ -72,6 +73,7 @@ export default function Home() {
   const [saveRecipeName, setSaveRecipeName] = useState('');
   const [showSaveInput, setShowSaveInput] = useState(false);
   const [vaultRefreshKey, setVaultRefreshKey] = useState(0);
+  const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -83,6 +85,7 @@ export default function Home() {
     setEditionId(ed.id);
     setBallWeight(ed.ballWeightDefault);
     setFermentationHours(ed.fermentation.default);
+    setThickness('regular');
     setCrust(
       defaultCrustModeStateFor(
         ed.hydrationDefault,
@@ -98,6 +101,7 @@ export default function Home() {
     const ed = findEdition(id as EditionId);
     setEditionId(ed.id);
     setBallWeight(clamp(ballWeight, ed.ballWeightRange[0], ed.ballWeightRange[1]));
+    setThickness('regular');
     setFermentationHours(snapFerm(fermentationHours, ed));
     setCrust((prev) => ({
       ...prev,
@@ -161,6 +165,11 @@ export default function Home() {
         effective.yeastType,
       ),
     [effective.preferment.hours, effective.preferment.temperatureC, effective.yeastType],
+  );
+
+  const diameterIn = useMemo(
+    () => diameterForBallWeight(ballWeight, thickness, edition),
+    [ballWeight, thickness, edition],
   );
 
   const dough = useMemo(
@@ -243,8 +252,8 @@ export default function Home() {
     }
   };
 
-  const ingredientsForVault = useMemo<Record<string, unknown>>(() => JSON.parse(JSON.stringify(dough)), [dough]);
-  const scheduleForVault = useMemo<Record<string, unknown>>(() => JSON.parse(JSON.stringify(schedule)), [schedule]);
+  const ingredientsForVault = useMemo<Record<string, unknown>>(() => dough as Record<string, unknown>, [dough]);
+  const scheduleForVault = useMemo<Record<string, unknown>>(() => schedule as Record<string, unknown>, [schedule]);
 
   return (
     <>
@@ -278,6 +287,9 @@ export default function Home() {
             onDoughBallsChange={setDoughBalls}
             ballWeight={ballWeight}
             onBallWeightChange={setBallWeight}
+            diameterIn={diameterIn}
+            thickness={thickness}
+            onThicknessChange={setThickness}
           />
         ) : (
           <>
@@ -406,10 +418,19 @@ export default function Home() {
         </section>
 
         <RecipeVault
-          currentIngredients={ingredientsForVault}
-          currentSchedule={scheduleForVault}
           refreshKey={vaultRefreshKey}
+          selectedId={selectedRecipeId}
+          onSelectId={setSelectedRecipeId}
         />
+        {selectedRecipeId && (
+          <RecipeDetail
+            recipeId={selectedRecipeId}
+            currentIngredients={ingredientsForVault}
+            currentSchedule={scheduleForVault}
+            onClose={() => setSelectedRecipeId(null)}
+            onDeleted={() => setSelectedRecipeId(null)}
+          />
+        )}
       </main>
     </>
   );

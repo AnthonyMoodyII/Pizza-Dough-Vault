@@ -218,15 +218,74 @@ export function defaultEditionFor(styleId: StyleId): Edition {
   return s.editions[0];
 }
 
+export type Thickness = 'thin' | 'regular' | 'thick';
+
+/** Relative dough density vs. a regular-thickness pie of the same diameter. */
+export const THICKNESS_FACTORS: Record<Thickness, number> = {
+  thin: 0.8,
+  regular: 1,
+  thick: 1.25,
+};
+
+export const THICKNESS_OPTIONS: { id: Thickness; label: string }[] = [
+  { id: 'thin', label: 'Thin' },
+  { id: 'regular', label: 'Regular' },
+  { id: 'thick', label: 'Thick' },
+];
+
+/** Quick-toggle pizza diameters (inches), à la doughguy.co. */
+export const PIZZA_SIZE_OPTIONS = [10, 12, 14, 16, 18, 20];
+
+/** Quick-toggle pizza counts. */
+export const COUNT_OPTIONS = [1, 2, 4, 6, 8, 12];
+
 /**
- * Approximate finished pizza diameter (inches) for a given ball weight,
- * interpolated linearly across the edition's published weight and diameter
- * ranges. Rough but stable, and matches how stylists publish their bands.
+ * Dough density (grams per square inch) at *regular* thickness, anchored to the
+ * edition's published default ball weight and the midpoint of its diameter band.
+ * Used as the bridge between a finished pizza diameter and its dough-ball weight.
+ */
+function doughDensity(edition: Edition): number {
+  const [dMin, dMax] = edition.diameterIn;
+  const midDiameter = (dMin + dMax) / 2;
+  const area = Math.PI * (midDiameter / 2) ** 2;
+  return edition.ballWeightDefault / area;
+}
+
+/**
+ * Dough-ball weight (g) for a pizza of the given finished diameter and thickness.
+ * Derived from the edition's density so it stays consistent with the style's
+ * published defaults; clamped to the edition's allowed ball-weight range and
+ * snapped to the nearest 5 g.
+ */
+export function ballWeightForSize(
+  diameterIn: number,
+  thickness: Thickness,
+  edition: Edition,
+): number {
+  const area = Math.PI * (diameterIn / 2) ** 2;
+  const raw = doughDensity(edition) * area * THICKNESS_FACTORS[thickness];
+  const [wMin, wMax] = edition.ballWeightRange;
+  return Math.max(wMin, Math.min(wMax, Math.round(raw / 5) * 5));
+}
+
+/**
+ * Inverse of {@link ballWeightForSize}: the finished diameter (inches) implied
+ * by a ball weight at a given thickness.
+ */
+export function diameterForBallWeight(
+  ballWeight: number,
+  thickness: Thickness,
+  edition: Edition,
+): number {
+  const area = ballWeight / THICKNESS_FACTORS[thickness] / doughDensity(edition);
+  return Math.sqrt(area / Math.PI) * 2;
+}
+
+/**
+ * Approximate finished pizza diameter (inches) for a given ball weight, assuming
+ * a regular thickness. Area-based (not linear) so it agrees with the size
+ * quick-toggle in easy mode.
  */
 export function estimateDiameterIn(ballWeight: number, edition: Edition): number {
-  const [wMin, wMax] = edition.ballWeightRange;
-  const [dMin, dMax] = edition.diameterIn;
-  if (wMax === wMin) return dMin;
-  const t = Math.max(0, Math.min(1, (ballWeight - wMin) / (wMax - wMin)));
-  return dMin + t * (dMax - dMin);
+  return diameterForBallWeight(ballWeight, 'regular', edition);
 }

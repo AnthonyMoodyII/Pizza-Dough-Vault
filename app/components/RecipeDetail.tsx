@@ -72,8 +72,9 @@ export default function RecipeDetail({
   if (loading) return <div className="recipe-detail-loading">Loading…</div>;
   if (!recipe) return null;
 
-  const avgRating = recipe.bakes.length
-    ? (recipe.bakes.reduce((a, b) => a + (b.rating ?? 0), 0) / recipe.bakes.filter(b => b.rating).length) || null
+  const rated = recipe.bakes.filter((b) => b.rating != null);
+  const avgRating = rated.length
+    ? rated.reduce((a, b) => a + (b.rating as number), 0) / rated.length
     : null;
 
   return (

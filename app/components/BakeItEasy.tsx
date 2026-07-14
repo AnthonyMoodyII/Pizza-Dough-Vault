@@ -1,5 +1,13 @@
 'use client';
-import { Edition, estimateDiameterIn } from '@/lib/styles';
+import {
+  Edition,
+  estimateDiameterIn,
+  ballWeightForSize,
+  PIZZA_SIZE_OPTIONS,
+  COUNT_OPTIONS,
+  THICKNESS_OPTIONS,
+  Thickness,
+} from '@/lib/styles';
 
 type Props = {
   edition: Edition;
@@ -11,6 +19,11 @@ type Props = {
   onDoughBallsChange: (n: number) => void;
   ballWeight: number;
   onBallWeightChange: (g: number) => void;
+  /** Finished pizza diameter (in) the ball weight currently implies. */
+  diameterIn: number;
+  /** Active thickness preset. */
+  thickness: Thickness;
+  onThicknessChange: (t: Thickness) => void;
 };
 
 const ALL_CHIPS = [4, 6, 8, 10, 12, 16, 24, 48, 72];
@@ -35,10 +48,17 @@ export default function BakeItEasy({
   onDoughBallsChange,
   ballWeight,
   onBallWeightChange,
+  diameterIn,
+  thickness,
+  onThicknessChange,
 }: Props) {
   const chips = ALL_CHIPS.filter(
     (h) => h >= edition.fermentation.min && h <= edition.fermentation.max,
   );
+
+  const handleSize = (d: number) =>
+    onBallWeightChange(ballWeightForSize(d, thickness, edition));
+  const handleCount = (n: number) => onDoughBallsChange(n);
 
   const handleDate = (s: string) => {
     if (!s) return;
@@ -89,6 +109,17 @@ export default function BakeItEasy({
       </div>
 
       <h3 className="sub-label">Number of Pizzas</h3>
+      <div className="chip-row">
+        {COUNT_OPTIONS.map((n) => (
+          <button
+            key={n}
+            className={`chip ${doughBalls === n ? 'chip-active' : ''}`}
+            onClick={() => handleCount(n)}
+          >
+            {n}
+          </button>
+        ))}
+      </div>
       <input
         type="number"
         min={1}
@@ -97,6 +128,35 @@ export default function BakeItEasy({
         onChange={(e) => onDoughBallsChange(Math.max(1, Number(e.target.value) || 1))}
         className="big-number"
       />
+
+      <h3 className="sub-label">Pizza Size</h3>
+      <div className="chip-row">
+        {PIZZA_SIZE_OPTIONS.map((d) => (
+          <button
+            key={d}
+            className={`chip ${Math.round(diameterIn) === d ? 'chip-active' : ''}`}
+            onClick={() => handleSize(d)}
+          >
+            {d}&quot;
+          </button>
+        ))}
+      </div>
+
+      <h3 className="sub-label">Thickness</h3>
+      <div className="chip-row">
+        {THICKNESS_OPTIONS.map((t) => (
+          <button
+            key={t.id}
+            className={`chip ${thickness === t.id ? 'chip-active' : ''}`}
+            onClick={() => {
+              onThicknessChange(t.id);
+              onBallWeightChange(ballWeightForSize(diameterIn, t.id, edition));
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
       <h3 className="sub-label">Weight Per Pizza (g)</h3>
       <div className="slider-track">

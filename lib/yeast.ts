@@ -1,3 +1,5 @@
+import { clamp } from './units';
+
 export type YeastType = 'idy' | 'ady' | 'fresh';
 
 /**
@@ -28,7 +30,7 @@ export function estimateIdyPercent(hours: number, temperatureC: number): number 
   const B = 0.06;
   const tRef = 20;
   const pct = K / (hours * Math.exp(B * (temperatureC - tRef)));
-  return clamp(pct, 0.01, 5);
+  return clampLocal(pct, 0.01, 5);
 }
 
 /**
@@ -45,6 +47,6 @@ export function toIdyPercent(percent: number, type: YeastType): number {
   return percent / YEAST_FACTOR[type];
 }
 
-function clamp(v: number, lo: number, hi: number) {
+function clampLocal(v: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, v));
 }

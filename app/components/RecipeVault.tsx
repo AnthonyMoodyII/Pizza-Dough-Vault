@@ -1,7 +1,6 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import RecipeCard, { RecipeSummary } from './RecipeCard';
-import RecipeDetail from './RecipeDetail';
 
 const STYLE_FILTERS = [
   { id: 'all', label: 'All' },
@@ -13,15 +12,14 @@ const STYLE_FILTERS = [
 ];
 
 type Props = {
-  currentIngredients: Record<string, unknown>;
-  currentSchedule: Record<string, unknown>;
   refreshKey?: number;
+  selectedId: string | null;
+  onSelectId: (id: string | null) => void;
 };
 
-export default function RecipeVault({ currentIngredients, currentSchedule, refreshKey }: Props) {
+function RecipeVault({ refreshKey, selectedId, onSelectId }: Props) {
   const [recipes, setRecipes] = useState<RecipeSummary[]>([]);
   const [filter, setFilter] = useState('all');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -37,16 +35,25 @@ export default function RecipeVault({ currentIngredients, currentSchedule, refre
   useEffect(() => { load(); }, [load, refreshKey]);
 
   const toggleFavorite = async (recipe: RecipeSummary) => {
-    await fetch(`/api/recipes/${recipe.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isFavorite: !recipe.isFavorite }),
-    });
-    load();
+    // Optimistic update: flip locally first, then persist in the background.
+    setRecipes((prev) =>
+      prev.map((r) => (r.id === recipe.id ? { ...r, isFavorite: !r.isFavorite } : r)),
+    );
+    try {
+      await fetch(`/api/recipes/${recipe.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isFavorite: !recipe.isFavorite }),
+      });
+    } catch {
+      // Revert on failure.
+      setRecipes((prev) =>
+        prev.map((r) => (r.id === recipe.id ? { ...r, isFavorite: recipe.isFavorite } : r)),
+      );
+    }
   };
 
   const filtered = filter === 'all' ? recipes : recipes.filter((r) => r.styleId === filter);
-  const selected = recipes.find((r) => r.id === selectedId) ?? null;
 
   return (
     <section className="glass-panel vault-panel">
@@ -81,22 +88,14 @@ export default function RecipeVault({ currentIngredients, currentSchedule, refre
               key={r.id}
               recipe={r}
               selected={r.id === selectedId}
-              onSelect={() => setSelectedId(r.id === selectedId ? null : r.id)}
+              onSelect={() => onSelectId(r.id === selectedId ? null : r.id)}
               onToggleFavorite={() => toggleFavorite(r)}
             />
           ))}
         </div>
       )}
-
-      {selected && (
-        <RecipeDetail
-          recipeId={selected.id}
-          currentIngredients={currentIngredients}
-          currentSchedule={currentSchedule}
-          onClose={() => setSelectedId(null)}
-          onDeleted={() => { setSelectedId(null); load(); }}
-        />
-      )}
     </section>
   );
 }
+
+export default memo(RecipeVault);
